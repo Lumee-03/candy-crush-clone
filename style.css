@@ -1,25 +1,22 @@
 body {
   margin: 0;
-  font-family: 'Arial', sans-serif;
-  background: #1a1a1a;
+  overflow: hidden;
+  background-color: #000;
+  font-family: sans-serif;
   color: white;
-  text-align: center;
 }
 
 h1 {
-  margin: 10px;
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 10px;
+  font-size: 1.5rem;
   color: #d946ef;
 }
 
-#gameCanvas {
-  background-color: #2e2e2e;
-  border: 3px solid #fff;
-  display: block;
-  margin: 0 auto;
-}
-
-#hud {
-  margin-top: 10px;
-  font-size: 18px;
+#game-container {
+  width: 100vw;
+  height: 100vh;
 }
 
