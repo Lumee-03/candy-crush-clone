@@ -1,5 +1,5 @@
-// Configuração básica da cena, câmera e renderizador
 const scene = new THREE.Scene();
+
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
@@ -26,14 +26,13 @@ const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-// Variável do jogador (modelo 3D)
+// Jogador (modelo 3D)
 let player;
 
-// Loader GLTF para carregar o modelo 3D
 const loader = new THREE.GLTFLoader();
 
 loader.load(
-  "models/soldier.glb",
+  "models/RobotExpressive.glb",
   function (gltf) {
     player = gltf.scene;
     player.scale.set(2, 2, 2);
@@ -46,14 +45,13 @@ loader.load(
   }
 );
 
-// Controle do teclado
+// Controle de teclado
 const keys = {};
 window.addEventListener("keydown", (e) => (keys[e.key.toLowerCase()] = true));
 window.addEventListener("keyup", (e) => (keys[e.key.toLowerCase()] = false));
 
 const speed = 0.1;
 
-// Ajusta o tamanho do renderizador se a janela mudar
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -61,18 +59,15 @@ window.addEventListener("resize", () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Função de animação principal
 function animate() {
   requestAnimationFrame(animate);
 
   if (player) {
-    // Movimento básico do jogador
     if (keys["w"] || keys["arrowup"]) player.position.z -= speed;
     if (keys["s"] || keys["arrowdown"]) player.position.z += speed;
     if (keys["a"] || keys["arrowleft"]) player.position.x -= speed;
     if (keys["d"] || keys["arrowright"]) player.position.x += speed;
 
-    // Câmera atrás e acima do jogador
     camera.position.x = player.position.x;
     camera.position.z = player.position.z + 10;
     camera.position.y = player.position.y + 5;
