@@ -1,22 +1,11 @@
-body {
+body, html {
   margin: 0;
+  padding: 0;
   overflow: hidden;
   background-color: #000;
-  font-family: sans-serif;
-  color: white;
-}
-
-h1 {
-  position: absolute;
-  z-index: 1;
-  top: 10px;
-  left: 10px;
-  font-size: 1.5rem;
-  color: #d946ef;
 }
 
 #game-container {
   width: 100vw;
   height: 100vh;
 }
-
