@@ -1,102 +1,61 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // céu azul
 
-let player = { x: 400, y: 250, size: 20, color: 'lime', life: 100 };
-let bullets = [];
-let enemies = [];
-let kills = 0;
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 5, 10);
 
-// Movimento
-let keys = {};
-document.addEventListener('keydown', (e) => keys[e.key] = true);
-document.addEventListener('keyup', (e) => keys[e.key] = false);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.getElementById('game-container').appendChild(renderer.domElement);
 
-// Tiro com espaço
-document.addEventListener('keydown', (e) => {
-  if (e.code === 'Space') {
-    bullets.push({ x: player.x, y: player.y, size: 5, dx: 10 });
-  }
+// Luz
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(10, 10, 10);
+scene.add(light);
+
+// Chão
+const textureLoader = new THREE.TextureLoader();
+const groundTexture = textureLoader.load('textures/ground.jpg');
+groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+groundTexture.repeat.set(50, 50);
+
+const groundMaterial = new THREE.MeshStandardMaterial({ map: groundTexture });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), groundMaterial);
+ground.rotation.x = -Math.PI / 2;
+scene.add(ground);
+
+// Soldado
+let player;
+const loader = new THREE.GLTFLoader();
+loader.load('models/soldier.glb', (gltf) => {
+  player = gltf.scene;
+  player.scale.set(2, 2, 2);
+  player.position.set(0, 0, 0);
+  scene.add(player);
 });
 
-// Atualização
-function update() {
-  // Movimento do jogador
-  if (keys['ArrowUp'] || keys['w']) player.y -= 4;
-  if (keys['ArrowDown'] || keys['s']) player.y += 4;
-  if (keys['ArrowLeft'] || keys['a']) player.x -= 4;
-  if (keys['ArrowRight'] || keys['d']) player.x += 4;
+// Movimento
+const keys = {};
+document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
 
-  // Limites
-  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+// Animação
+function animate() {
+  requestAnimationFrame(animate);
 
-  // Atualizar balas
-  bullets.forEach((b, i) => {
-    b.x += b.dx;
-    if (b.x > canvas.width) bullets.splice(i, 1);
-  });
+  if (player) {
+    if (keys['w']) player.position.z -= 0.1;
+    if (keys['s']) player.position.z += 0.1;
+    if (keys['a']) player.position.x -= 0.1;
+    if (keys['d']) player.position.x += 0.1;
 
-  // Inimigos
-  enemies.forEach((e, i) => {
-    let dx = player.x - e.x;
-    let dy = player.y - e.y;
-    let dist = Math.sqrt(dx * dx + dy * dy);
-    e.x += (dx / dist) * 1.5;
-    e.y += (dy / dist) * 1.5;
+    camera.position.x = player.position.x + 5;
+    camera.position.y = player.position.y + 5;
+    camera.position.z = player.position.z + 10;
+    camera.lookAt(player.position);
+  }
 
-    // Colisão com jogador
-    if (dist < player.size) {
-      player.life -= 0.5;
-      if (player.life <= 0) {
-        alert("Game Over! Inimigos eliminados: " + kills);
-        document.location.reload();
-      }
-    }
-
-    // Colisão com bala
-    bullets.forEach((b, j) => {
-      let d2 = Math.hypot(b.x - e.x, b.y - e.y);
-      if (d2 < 20) {
-        enemies.splice(i, 1);
-        bullets.splice(j, 1);
-        kills++;
-      }
-    });
-  });
-
-  // Atualiza HUD
-  document.getElementById('life').textContent = Math.max(0, Math.floor(player.life));
-  document.getElementById('kills').textContent = kills;
+  renderer.render(scene, camera);
 }
+animate();
 
-// Desenhar tudo
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Jogador
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x, player.y, player.size, player.size);
-
-  // Balas
-  ctx.fillStyle = 'yellow';
-  bullets.forEach(b => ctx.fillRect(b.x, b.y + 7, b.size * 2, b.size));
-
-  // Inimigos
-  ctx.fillStyle = 'red';
-  enemies.forEach(e => ctx.fillRect(e.x, e.y, 25, 25));
-}
-
-// Criar inimigos
-setInterval(() => {
-  const x = Math.random() > 0.5 ? 0 : canvas.width;
-  const y = Math.random() * canvas.height;
-  enemies.push({ x, y });
-}, 1500);
-
-// Loop do jogo
-function gameLoop() {
-  update();
-  draw();
-  requestAnimationFrame(gameLoop);
-}
-gameLoop();
