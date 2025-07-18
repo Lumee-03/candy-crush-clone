@@ -1,125 +1,102 @@
-const grid = document.querySelector('.grid');
-const scoreDisplay = document.getElementById('score');
-const width = 8;
-const squares = [];
-let score = 0;
-const colors = ['red', 'yellow', 'green', 'blue', 'orange', 'purple'];
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-function getRandomColor() {
-  return colors[Math.floor(Math.random() * colors.length)];
-}
+let player = { x: 400, y: 250, size: 20, color: 'lime', life: 100 };
+let bullets = [];
+let enemies = [];
+let kills = 0;
 
-function createBoard() {
-  for (let i = 0; i < width * width; i++) {
-    const square = document.createElement('div');
-    square.setAttribute('draggable', true);
-    square.setAttribute('id', i);
-    let color = getRandomColor();
-    square.classList.add('square', color);
-    grid.appendChild(square);
-    squares.push(square);
+// Movimento
+let keys = {};
+document.addEventListener('keydown', (e) => keys[e.key] = true);
+document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+// Tiro com espaço
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') {
+    bullets.push({ x: player.x, y: player.y, size: 5, dx: 10 });
   }
-}
-createBoard();
-
-// Drag and drop
-let colorBeingDragged, colorBeingReplaced;
-let squareIdBeingDragged, squareIdBeingReplaced;
-
-squares.forEach(square => {
-  square.addEventListener('dragstart', dragStart);
-  square.addEventListener('dragend', dragEnd);
-  square.addEventListener('dragover', e => e.preventDefault());
-  square.addEventListener('dragenter', e => e.preventDefault());
-  square.addEventListener('drop', dragDrop);
 });
 
-function dragStart() {
-  colorBeingDragged = this.classList[1];
-  squareIdBeingDragged = parseInt(this.id);
-}
+// Atualização
+function update() {
+  // Movimento do jogador
+  if (keys['ArrowUp'] || keys['w']) player.y -= 4;
+  if (keys['ArrowDown'] || keys['s']) player.y += 4;
+  if (keys['ArrowLeft'] || keys['a']) player.x -= 4;
+  if (keys['ArrowRight'] || keys['d']) player.x += 4;
 
-function dragDrop() {
-  colorBeingReplaced = this.classList[1];
-  squareIdBeingReplaced = parseInt(this.id);
+  // Limites
+  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
+  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
 
-  squares[squareIdBeingDragged].classList.remove(colorBeingDragged);
-  squares[squareIdBeingDragged].classList.add(colorBeingReplaced);
-  squares[squareIdBeingReplaced].classList.remove(colorBeingReplaced);
-  squares[squareIdBeingReplaced].classList.add(colorBeingDragged);
-}
+  // Atualizar balas
+  bullets.forEach((b, i) => {
+    b.x += b.dx;
+    if (b.x > canvas.width) bullets.splice(i, 1);
+  });
 
-function dragEnd() {
-  let validMoves = [
-    squareIdBeingDragged - 1,
-    squareIdBeingDragged + 1,
-    squareIdBeingDragged - width,
-    squareIdBeingDragged + width
-  ];
-  let validMove = validMoves.includes(squareIdBeingReplaced);
+  // Inimigos
+  enemies.forEach((e, i) => {
+    let dx = player.x - e.x;
+    let dy = player.y - e.y;
+    let dist = Math.sqrt(dx * dx + dy * dy);
+    e.x += (dx / dist) * 1.5;
+    e.y += (dy / dist) * 1.5;
 
-  if (!squareIdBeingReplaced || !validMove) {
-    squares[squareIdBeingDragged].classList.remove(squares[squareIdBeingDragged].classList[1]);
-    squares[squareIdBeingDragged].classList.add(colorBeingDragged);
-    squares[squareIdBeingReplaced].classList.remove(squares[squareIdBeingReplaced].classList[1]);
-    squares[squareIdBeingReplaced].classList.add(colorBeingReplaced);
-  }
-
-  squareIdBeingReplaced = null;
-}
-
-function checkRowForThree() {
-  for (let i = 0; i < 61; i++) {
-    let rowOfThree = [i, i + 1, i + 2];
-    let decidedColor = squares[i].classList[1];
-    const notValid = [6,7,14,15,22,23,30,31,38,39,46,47,54,55];
-    if (notValid.includes(i)) continue;
-
-    if (rowOfThree.every(idx => squares[idx].classList[1] === decidedColor)) {
-      score += 3;
-      scoreDisplay.textContent = 'Pontuação: ' + score;
-      rowOfThree.forEach(idx => {
-        squares[idx].classList.remove(decidedColor);
-        squares[idx].classList.add(getRandomColor());
-      });
+    // Colisão com jogador
+    if (dist < player.size) {
+      player.life -= 0.5;
+      if (player.life <= 0) {
+        alert("Game Over! Inimigos eliminados: " + kills);
+        document.location.reload();
+      }
     }
-  }
+
+    // Colisão com bala
+    bullets.forEach((b, j) => {
+      let d2 = Math.hypot(b.x - e.x, b.y - e.y);
+      if (d2 < 20) {
+        enemies.splice(i, 1);
+        bullets.splice(j, 1);
+        kills++;
+      }
+    });
+  });
+
+  // Atualiza HUD
+  document.getElementById('life').textContent = Math.max(0, Math.floor(player.life));
+  document.getElementById('kills').textContent = kills;
 }
 
-function checkColumnForThree() {
-  for (let i = 0; i < 47; i++) {
-    let columnOfThree = [i, i + width, i + width * 2];
-    let decidedColor = squares[i].classList[1];
+// Desenhar tudo
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (columnOfThree.every(idx => squares[idx].classList[1] === decidedColor)) {
-      score += 3;
-      scoreDisplay.textContent = 'Pontuação: ' + score;
-      columnOfThree.forEach(idx => {
-        squares[idx].classList.remove(decidedColor);
-        squares[idx].classList.add(getRandomColor());
-      });
-    }
-  }
+  // Jogador
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.size, player.size);
+
+  // Balas
+  ctx.fillStyle = 'yellow';
+  bullets.forEach(b => ctx.fillRect(b.x, b.y + 7, b.size * 2, b.size));
+
+  // Inimigos
+  ctx.fillStyle = 'red';
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, 25, 25));
 }
 
-function moveDown() {
-  for (let i = 0; i < 56; i++) {
-    if (!squares[i + width].classList[1]) {
-      squares[i + width].classList.add(squares[i].classList[1]);
-      squares[i].classList.remove(squares[i].classList[1]);
-    }
-  }
+// Criar inimigos
+setInterval(() => {
+  const x = Math.random() > 0.5 ? 0 : canvas.width;
+  const y = Math.random() * canvas.height;
+  enemies.push({ x, y });
+}, 1500);
 
-  for (let i = 0; i < width; i++) {
-    if (!squares[i].classList[1]) {
-      squares[i].classList.add(getRandomColor());
-    }
-  }
+// Loop do jogo
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
 }
-
-window.setInterval(() => {
-  moveDown();
-  checkRowForThree();
-  checkColumnForThree();
-}, 100);
-
+gameLoop();
