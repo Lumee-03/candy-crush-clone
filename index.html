@@ -2,14 +2,22 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <title>Jogo 3D básico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Last War 3D</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <h1>Last War 3D 🚁</h1>
   <div id="game-container"></div>
 
-  <!-- Importar Three.js da CDN -->
+  <!-- Biblioteca principal Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.min.js"></script>
+
+  <!-- Loader para carregar modelos GLTF/GLB -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <!-- Seu script principal -->
   <script src="script.js"></script>
 </body>
 </html>
+
